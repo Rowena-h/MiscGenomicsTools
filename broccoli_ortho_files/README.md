@@ -9,5 +9,3 @@ Designed to be run within the same directory as a Broccoli run as:
 ```
 
 Which will submit a Univa-Grid-Engine cluster array job `orthogroup_fasta_array.sh`
-
-The number of orthogroups must be manually added to `orthogroup_fasta_array.sh` before running the `/orthogroup_fasta_array_submit.sh` script by changing the `-t` option.

@@ -53,8 +53,11 @@ cat dir_step3/orthologous_groups.txt | awk '{print $1}' | sed 1d > orthogroups
 ls orthogroup_sequences/*.fa | sed 's/orthogroup_sequences\///' | sed 's/.fa//' > files
 diff -y --suppress-common-lines <(sort orthogroups) <(sort files) | sed 's/<//' > list
 
+#Read number of orthogroups to be run into variable for array jobs
+NUM=$(cat list | wc -l)
+
 #Submit cluster array jobs and wait until all have finished
-qsub orthogroup_fasta_array.sh
+qsub -t 1-${NUM} orthogroup_fasta_array.sh
 
 sleep 2
 

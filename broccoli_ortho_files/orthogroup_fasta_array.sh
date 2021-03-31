@@ -5,7 +5,6 @@
 #$ -l h_vmem=1G         # Request 1GB RAM
 #$ -o /dev/null         # Suppress stdout to file (as large array job)
 #$ -e /dev/null         # Suppress sterr to file (as large array job)
-#$ -t 1-244             # Set array number (i.e. number of orthogroups to run/length of 'list' file)
 
 #Make variable with the orthogroup number
 ORTHOGROUP=$(cat list | sed -n ${SGE_TASK_ID}p | awk '{print $1}')
