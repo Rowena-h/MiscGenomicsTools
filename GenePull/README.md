@@ -32,5 +32,5 @@ If there are multiple hits for the query gene, you will be shown the blast resul
 ### Example
 
 ```
-./GenePull $0 -a assembly.fa -g ITS.fa -o ITS_result
+./GenePull -a assembly.fa -g ITS.fa -o ITS_result
 ```
