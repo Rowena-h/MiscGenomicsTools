@@ -27,7 +27,7 @@ Option | Description
 -g, --gene | Gene of closely related species in fasta format
 -o, --output | Prefix for output file
 
-If there are multiple hits for the query gene, you will be shown the blast results and asked which hit you want to extract. Alternatively all hits can be extracted by typing `a`.
+If there are multiple hits for the query gene, you will be shown the blast results and asked which hit you want to extract. To pick multiple hits, numbers must be separated by commas (e.g. `1,2,5,6,8`). Alternatively all hits can be extracted by typing `a`.
 
 ### Example
 
