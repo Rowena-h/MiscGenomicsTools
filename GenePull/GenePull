@@ -61,7 +61,7 @@ then
     exit
 fi
 
-if [ -z "$ASSEMBLY" ] || [ -z "$GENE" ] || [ -o "$OUT" ]
+if [ -z "$ASSEMBLY" ] || [ -z "$GENE" ] || [ -z "$OUT" ]
 then
     echo "Missing required options"
     display_usage
