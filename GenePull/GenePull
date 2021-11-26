@@ -16,7 +16,7 @@ display_usage() {
     echo "      prefix for output file"
     echo ""
     echo "EXAMPLE"
-	echo "  $0 -a assembly.fa -g ITS.fa -o ITS_result"
+	echo "  $0 -a assembly.fa -g LSU.fa -o LSU_result"
     echo ""
     exit
 }
@@ -69,19 +69,27 @@ then
     exit
 fi
 
+GENE_LABEL=$(echo $GENE | sed 's#/##g')
+
 #Make blast database from contigs
 makeblastdb -in $ASSEMBLY -dbtype nucl
 
 #Blast genes against contigs
 blastn 	-query $GENE -db $ASSEMBLY \
-	-outfmt '6 qseqid sseqid length pident bitscore evalue sstart send' \
-	-out ${ASSEMBLY}_${GENE}_blast
+        -outfmt '6 qseqid sseqid length pident bitscore evalue sstart send' \
+        -out ${ASSEMBLY}_${GENE_LABEL}_blast
 
+if [[ ! -s ${ASSEMBLY}_${GENE_LABEL}_blast ]]
+then
+    echo "No hits!"
+    exit
+fi
+        
 #Format table of results
-cat -n ${ASSEMBLY}_${GENE}_blast > tmp && mv tmp ${ASSEMBLY}_${GENE}_blast
-echo -e "hit\tquery\tcontig_hit\tlength\tpident\tbitscore\tevalue\tstart\tend" | cat - ${ASSEMBLY}_${GENE}_blast > tmp && mv tmp ${ASSEMBLY}_${GENE}_blast
+cat -n ${ASSEMBLY}_${GENE_LABEL}_blast > tmp_$$ && mv tmp_$$ ${ASSEMBLY}_${GENE_LABEL}_blast
+echo -e "hit\tquery\tcontig_hit\tlength\tpident\tbitscore\tevalue\tstart\tend" | cat - ${ASSEMBLY}_${GENE_LABEL}_blast > tmp_$$ && mv tmp_$$ ${ASSEMBLY}_${GENE_LABEL}_blast
 
-NUM=$(wc -l <${ASSEMBLY}_${GENE}_blast)
+NUM=$(wc -l <${ASSEMBLY}_${GENE_LABEL}_blast)
 
 if [[ $NUM -gt 1 ]]
 then
@@ -89,38 +97,38 @@ then
     echo " "
 	echo "--------------------BLAST RESULTS--------------------"
 	#Show blast results
-	column -t -s $'\t' ${ASSEMBLY}_${GENE}_blast
+	column -t -s $'\t' ${ASSEMBLY}_${GENE_LABEL}_blast
 	echo "--------------------BLAST RESULTS--------------------"
     echo " "
     #Ask for hit to pull
 	echo "Please specify the number of the hit(s) you would like to pull."
     echo "Multiple hits must be separated by a comma (e.g. 2,6,9) or type a to pull all hits: "
 	read RESULT
-	
-	sed -i 1d ${ASSEMBLY}_${GENE}_blast
+    
+    sed -i 1d ${ASSEMBLY}_${GENE_LABEL}_blast
 
 	if [[ $RESULT == "a" ]]
 	then
 
 		#Convert all hits to BED file
-		awk -v OFS='\t' '{print $3, $8, $9}' ${ASSEMBLY}_${GENE}_blast > tmp.bed
+		awk -v OFS='\t' '{print $3, $8, $9}' ${ASSEMBLY}_${GENE_LABEL}_blast > tmp_$$.bed
 
 		for i in $(seq 1 $NUM)
 		do
 			#Check orientation
-			START=$(sed -n ${i}p tmp.bed | awk '{print $2}')
-			END=$(sed -n ${i}p tmp.bed | awk '{print $3}')
+			START=$(sed -n ${i}p tmp_$$.bed | awk '{print $2}')
+			END=$(sed -n ${i}p tmp_$$.bed | awk '{print $3}')
 
 	        if [[ $START -gt $END ]]
 	        then
         	    echo "Sequence ${i} is in the opposite orientation to the query and may need to be reverse complemented"
-		        sed -n ${i}p tmp.bed | awk -v OFS='\t' '{print $1, $3, $2, $4}' >> tmp
+		        sed -n ${i}p tmp_$$.bed | awk -v OFS='\t' '{print $1, $3, $2, $4}' >> tmp_$$
             else
-               	sed -n ${i}p tmp.bed >> tmp
+               	sed -n ${i}p tmp_$$.bed >> tmp_$$
         	fi
 		done
 		
-		mv tmp tmp.bed
+		mv tmp_$$ tmp_$$.bed
 
 	else
     
@@ -128,48 +136,50 @@ then
         LIST=$(sed 's/,/p;/g' <<< $RESULT)
 
 		#Convert selected hit(s) to BED file
-		sed -n "${LIST}p" ${ASSEMBLY}_${GENE}_blast | awk -v OFS='\t' '{print $3, $8, $9}' > tmp.bed
+		sed -n "${LIST}p" ${ASSEMBLY}_${GENE_LABEL}_blast | awk -v OFS='\t' '{print $3, $8, $9}' > tmp_$$.bed
 	
 		for i in $(seq 1 $NUM_CHOSEN)
         do		
 			#Check orientation
-			START=$(sed -n ${i}p tmp.bed | awk '{print $2}')
-        	END=$(sed -n ${i}p tmp.bed | awk '{print $3}')
+			START=$(sed -n ${i}p tmp_$$.bed | awk '{print $2}')
+        	END=$(sed -n ${i}p tmp_$$.bed | awk '{print $3}')
 
         	if [[ $START -gt $END ]]
 			then
             	echo "Selected sequence ${i} is in the opposite orientation to the query and may need to be reverse complemented"
-				sed -n ${i}p tmp.bed | awk -v OFS='\t' '{print $1, $3, $2, $4}' >> tmp
+				sed -n ${i}p tmp_$$.bed | awk -v OFS='\t' '{print $1, $3, $2, $4}' >> tmp_$$
 			else
-                sed -n ${i}p tmp.bed >> tmp
+                sed -n ${i}p tmp_$$.bed >> tmp_$$
             fi
 		done
 
-        mv tmp tmp.bed
+        mv tmp_$$ tmp_$$.bed
 
 	fi
 
 else
 
+    sed -i 1d ${ASSEMBLY}_${GENE_LABEL}_blast
+
 	#Convert single hit to BED file
-    awk -v OFS='\t' '{print $3, $8, $9}' ${ASSEMBLY}_${GENE}_blast > tmp.bed
+    awk -v OFS='\t' '{print $3, $8, $9}' ${ASSEMBLY}_${GENE_LABEL}_blast > tmp_$$.bed
 
 	#Check orientation
-	START=$(awk '{print $2}' tmp.bed)
-    END=$(awk '{print $3}' tmp.bed)
+	START=$(awk '{print $2}' tmp_$$.bed)
+    END=$(awk '{print $3}' tmp_$$.bed)
 
     if [[ $START -gt $END ]]
 	then
 		echo "Sequence is in the opposite orientation to the query and may need to be reverse complemented"
-		awk -v OFS='\t' '{print $1, $3, $2, $4}' tmp.bed > tmp && mv tmp tmp.bed
+		awk -v OFS='\t' '{print $1, $3, $2, $4}' tmp_$$.bed > tmp_$$ && mv tmp_$$ tmp_$$.bed
 	fi
 
 fi
 
 #Pull hit(s)
-bedtools getfasta -fi ${ASSEMBLY} -bed tmp.bed > ${OUT}.fa
+bedtools getfasta -fi ${ASSEMBLY} -bed tmp_$$.bed > ${OUT}.fa
 
 #Remove intermediary files
-rm tmp.bed
+rm tmp_$$.bed ${ASSEMBLY}_${GENE_LABEL}_blast
 
 echo "Done, hit(s) saved in ${OUT}.fa"
