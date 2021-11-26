@@ -4,9 +4,9 @@
 display_usage() {
 	echo ""
 	echo "USAGE: $0 [OPTIONS]"
-    echo ""
+	echo ""
 	echo "OPTIONS"
-    echo "  -h, --help"
+	echo "  -h, --help"
     echo "      display these options"
 	echo "  -a, --assembly"
     echo "      genome assembly in fasta format"
@@ -77,6 +77,10 @@ blastn 	-query $GENE -db $ASSEMBLY \
 	-outfmt '6 qseqid sseqid evalue bitscore pident sstart send length' \
 	-out ${ASSEMBLY}_${GENE}_blast
 
+#Format table of results
+cat -n ${ASSEMBLY}_${GENE}_blast > tmp && mv tmp ${ASSEMBLY}_${GENE}_blast
+echo -e "hit\tquery\tcontig_hit\tevalue\tbitscore\tpident\tstart\tend\tlength" | cat - ${ASSEMBLY}_${GENE}_blast > tmp && mv tmp ${ASSEMBLY}_${GENE}_blast
+
 NUM=$(wc -l <${ASSEMBLY}_${GENE}_blast)
 
 if [[ $NUM -gt 1 ]]
@@ -85,8 +89,7 @@ then
     echo " "
 	echo "--------------------BLAST RESULTS--------------------"
 	#Show blast results
-	echo "hit	query	contig_hit	evalue	bitscore	pident	start	end	length"
-	cat -n ${ASSEMBLY}_${GENE}_blast
+	column -t -s $'\t' ${ASSEMBLY}_${GENE}_blast
 	echo "--------------------BLAST RESULTS--------------------"
     echo " "
     #Ask for hit to pull
