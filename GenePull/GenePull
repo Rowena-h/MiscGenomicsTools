@@ -7,66 +7,66 @@ display_usage() {
 	echo ""
 	echo "OPTIONS"
 	echo "  -h, --help"
-    echo "      display these options"
+	echo "	  display these options"
 	echo "  -a, --assembly"
-    echo "      genome assembly in fasta format"
+	echo "	  genome assembly in fasta format"
 	echo "  -g, --gene"
-    echo "      gene of closely related species in fasta format"
-    echo "  -o, --output"
-    echo "      prefix for output file"
-    echo ""
-    echo "EXAMPLE"
+	echo "	  gene of closely related species in fasta format"
+	echo "  -o, --output"
+	echo "	  prefix for output file"
+	echo ""
+	echo "EXAMPLE"
 	echo "  $0 -a assembly.fa -g LSU.fa -o LSU_result"
-    echo ""
-    exit
+	echo ""
+	exit
 }
 
 if [ -z "$1" ]
 then
-    display_usage
-    exit
+	display_usage
+	exit
 fi
 
 while [ "$#" -gt 0 ]
 do
-    ARGUMENTS="$1"
-    case $ARGUMENTS in
-        -h|--help)
-        display_usage
-        ;;
-        -a|--assembly)
-        ASSEMBLY="$2"
-        shift
-        ;;
-        -g|--gene)
-        GENE="$2"
-        shift
-        ;;
-        -o|--output)
-        OUT="$2"
-        shift
-    esac
-    shift
+	ARGUMENTS="$1"
+	case $ARGUMENTS in
+		-h|--help)
+		display_usage
+		;;
+		-a|--assembly)
+		ASSEMBLY="$2"
+		shift
+		;;
+		-g|--gene)
+		GENE="$2"
+		shift
+		;;
+		-o|--output)
+		OUT="$2"
+		shift
+	esac
+	shift
 done
 
 if ! command -v blastn &> /dev/null
 then
-    echo "Could not find blastn - please install first."
-    exit
+	echo "Could not find blastn - please install first."
+	exit
 fi
 
 if ! command -v bedtools &> /dev/null
 then
-    echo "Could not find bedtools - please install first."
-    exit
+	echo "Could not find bedtools - please install first."
+	exit
 fi
 
 if [ -z "$ASSEMBLY" ] || [ -z "$GENE" ] || [ -z "$OUT" ]
 then
-    echo "Missing required options"
-    display_usage
-    echo "Exiting..."
-    exit
+	echo "Missing required options"
+	display_usage
+	echo "Exiting..."
+	exit
 fi
 
 GENE_LABEL=$(echo $GENE | sed 's#/##g')
@@ -76,15 +76,15 @@ makeblastdb -in $ASSEMBLY -dbtype nucl
 
 #Blast genes against contigs
 blastn 	-query $GENE -db $ASSEMBLY \
-        -outfmt '6 qseqid sseqid length pident bitscore evalue sstart send' \
-        -out ${ASSEMBLY}_${GENE_LABEL}_blast
+		-outfmt '6 qseqid sseqid length pident bitscore evalue sstart send' \
+		-out ${ASSEMBLY}_${GENE_LABEL}_blast
 
 if [[ ! -s ${ASSEMBLY}_${GENE_LABEL}_blast ]]
 then
-    echo "No hits!"
-    exit
+	echo "No hits!"
+	exit
 fi
-        
+
 #Format table of results
 cat -n ${ASSEMBLY}_${GENE_LABEL}_blast > tmp_$$ && mv tmp_$$ ${ASSEMBLY}_${GENE_LABEL}_blast
 echo -e "hit\tquery\tcontig_hit\tlength\tpident\tbitscore\tevalue\tstart\tend" | cat - ${ASSEMBLY}_${GENE_LABEL}_blast > tmp_$$ && mv tmp_$$ ${ASSEMBLY}_${GENE_LABEL}_blast
@@ -94,18 +94,18 @@ NUM=$(wc -l <${ASSEMBLY}_${GENE_LABEL}_blast)
 if [[ $NUM -gt 1 ]]
 then
 
-    echo " "
+	echo " "
 	echo "--------------------BLAST RESULTS--------------------"
 	#Show blast results
 	column -t -s $'\t' ${ASSEMBLY}_${GENE_LABEL}_blast
 	echo "--------------------BLAST RESULTS--------------------"
-    echo " "
-    #Ask for hit to pull
+	echo " "
+	#Ask for hit to pull
 	echo "Please specify the number of the hit(s) you would like to pull."
-    echo "Multiple hits must be separated by a comma (e.g. 2,6,9) or type a to pull all hits: "
+	echo "Multiple hits must be separated by a comma (e.g. 2,6,9) or type a to pull all hits: "
 	read RESULT
-    
-    sed -i 1d ${ASSEMBLY}_${GENE_LABEL}_blast
+	
+	sed -i 1d ${ASSEMBLY}_${GENE_LABEL}_blast
 
 	if [[ $RESULT == "a" ]]
 	then
@@ -119,56 +119,56 @@ then
 			START=$(sed -n ${i}p tmp_$$.bed | awk '{print $2}')
 			END=$(sed -n ${i}p tmp_$$.bed | awk '{print $3}')
 
-	        if [[ $START -gt $END ]]
-	        then
-        	    echo "Sequence ${i} is in the opposite orientation to the query and may need to be reverse complemented"
-		        sed -n ${i}p tmp_$$.bed | awk -v OFS='\t' '{print $1, $3, $2, $4}' >> tmp_$$
-            else
-               	sed -n ${i}p tmp_$$.bed >> tmp_$$
-        	fi
+			if [[ $START -gt $END ]]
+			then
+				echo "Sequence ${i} is in the opposite orientation to the query and may need to be reverse complemented"
+				sed -n ${i}p tmp_$$.bed | awk -v OFS='\t' '{print $1, $3, $2, $4}' >> tmp_$$
+			else
+			   	sed -n ${i}p tmp_$$.bed >> tmp_$$
+			fi
 		done
 		
 		mv tmp_$$ tmp_$$.bed
 
 	else
-    
+	
 		NUM_CHOSEN=$(awk -F '[0-9]' '{print NF-1}' <<< $RESULT)
-        LIST=$(sed 's/,/p;/g' <<< $RESULT)
+		LIST=$(sed 's/,/p;/g' <<< $RESULT)
 
 		#Convert selected hit(s) to BED file
 		sed -n "${LIST}p" ${ASSEMBLY}_${GENE_LABEL}_blast | awk -v OFS='\t' '{print $3, $8, $9}' > tmp_$$.bed
 	
 		for i in $(seq 1 $NUM_CHOSEN)
-        do		
+		do		
 			#Check orientation
 			START=$(sed -n ${i}p tmp_$$.bed | awk '{print $2}')
-        	END=$(sed -n ${i}p tmp_$$.bed | awk '{print $3}')
+			END=$(sed -n ${i}p tmp_$$.bed | awk '{print $3}')
 
-        	if [[ $START -gt $END ]]
+			if [[ $START -gt $END ]]
 			then
-            	echo "Selected sequence ${i} is in the opposite orientation to the query and may need to be reverse complemented"
+				echo "Selected sequence ${i} is in the opposite orientation to the query and may need to be reverse complemented"
 				sed -n ${i}p tmp_$$.bed | awk -v OFS='\t' '{print $1, $3, $2, $4}' >> tmp_$$
 			else
-                sed -n ${i}p tmp_$$.bed >> tmp_$$
-            fi
+				sed -n ${i}p tmp_$$.bed >> tmp_$$
+			fi
 		done
 
-        mv tmp_$$ tmp_$$.bed
+		mv tmp_$$ tmp_$$.bed
 
 	fi
 
 else
 
-    sed -i 1d ${ASSEMBLY}_${GENE_LABEL}_blast
+	sed -i 1d ${ASSEMBLY}_${GENE_LABEL}_blast
 
 	#Convert single hit to BED file
-    awk -v OFS='\t' '{print $3, $8, $9}' ${ASSEMBLY}_${GENE_LABEL}_blast > tmp_$$.bed
+	awk -v OFS='\t' '{print $3, $8, $9}' ${ASSEMBLY}_${GENE_LABEL}_blast > tmp_$$.bed
 
 	#Check orientation
 	START=$(awk '{print $2}' tmp_$$.bed)
-    END=$(awk '{print $3}' tmp_$$.bed)
+	END=$(awk '{print $3}' tmp_$$.bed)
 
-    if [[ $START -gt $END ]]
+	if [[ $START -gt $END ]]
 	then
 		echo "Sequence is in the opposite orientation to the query and may need to be reverse complemented"
 		awk -v OFS='\t' '{print $1, $3, $2, $4}' tmp_$$.bed > tmp_$$ && mv tmp_$$ tmp_$$.bed
