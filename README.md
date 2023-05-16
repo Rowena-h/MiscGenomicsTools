@@ -44,3 +44,27 @@ cat file_edited.fasta
 >test3
 ataaagctcggctaa-----------------------tggac??????????
 ```
+
+### Print length of all sequences in a fasta file.
+```
+awk '/^>/ {
+  if (seqlen){print seqlen}; print ;seqlen=0;next; 
+  } { 
+  seqlen += length($0)
+  }END{
+  print seqlen
+  }' file.fasta
+```
+#### Result:
+```
+>ptg000001
+4551850
+>ptg000002
+10701577
+>ptg000003
+6461149
+>ptg000004
+6151846
+>ptg000005
+8702012
+```
