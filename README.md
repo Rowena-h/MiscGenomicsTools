@@ -68,3 +68,8 @@ awk '/^>/ {
 >ptg000005
 8702012
 ```
+
+### Sort multifasta file by alphanumeric headers.
+```
+sed 's/^>/\x00&/' file.fasta  | sort -z | tr -d '\0'
+```
