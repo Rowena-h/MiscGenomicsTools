@@ -73,3 +73,8 @@ awk '/^>/ {
 ```
 sed 's/^>/\x00&/' file.fasta  | sort -z | tr -d '\0'
 ```
+
+### Check which reference sequences are included in BAM.
+```
+samtools view file.bam | cut -f3 | uniq -c
+```
