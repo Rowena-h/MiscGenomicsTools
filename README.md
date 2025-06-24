@@ -45,7 +45,7 @@ cat file_edited.fasta
 ataaagctcggctaa-----------------------tggac??????????
 ```
 
-### Print length of all sequences in a fasta file.
+### Print length of each sequence in a fasta file.
 ```
 awk '/^>/ {
   if (seqlen){print seqlen}; print ;seqlen=0;next; 
@@ -67,6 +67,24 @@ awk '/^>/ {
 6151846
 >ptg000005
 8702012
+```
+
+### Print total length of all sequences in a fasta file.
+```
+awk '/^>/ {
+  seqtotal+=seqlen
+  seqlen=0
+  seq+=1
+  next
+  } {
+  seqlen += length($0)
+  }END{
+  print seq" sequences, total length " seqtotal+seqlen
+  }' file.fasta
+```
+#### Result:
+```
+1249 sequences, total length 77892111
 ```
 
 ### Sort multifasta file by alphanumeric headers.
